@@ -18,7 +18,7 @@ export function playAudioInVoiceChannel(message: any, channelId: string, retryCo
 
     const player = createAudioPlayer();
     const resource = createAudioResource(
-      path.join(import.meta.dirname, '../assets/clock.mp3'),
+      path.join(import.meta.dirname, '../../assets/clock.mp3'),
       { inlineVolume: true }
     );
     resource.volume?.setVolume(1.0);
