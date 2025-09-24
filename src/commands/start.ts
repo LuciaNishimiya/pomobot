@@ -35,11 +35,6 @@ export async function startPomodoro(client: Client, message: OmitPartialGroupDMC
   timer.subscribe(async (currentTime: { minutes: number; seconds: number, status: string, rounds: number }) => {
     console.log(currentTime);
     console.log(timer.silent);
-    if (currentTime.status === 'finished') {
-      client.pomodoro.delete(voiceChannelId);
-      message.channel.send('✅ Pomodoro completado!');
-      return;
-    }
 
     const statusFormatted = `${currentTime.status === 'work' ? 'Trabajo' : 'Descanso'}`;
     const timeFormatted = `${currentTime.minutes.toFixed(0).padStart(2, '0')}:${currentTime.seconds.toFixed(0).padStart(2, '0')}`
@@ -93,5 +88,10 @@ export async function startPomodoro(client: Client, message: OmitPartialGroupDMC
           Rondas: ${rounds}/${currentTime.rounds}`,
       files: [updatedImage],
     });
+     if (currentTime.status === 'finished') {
+      client.pomodoro.delete(voiceChannelId);
+      message.channel.send('✅ Pomodoro completado!');
+      return;
+    }
   });
 }
