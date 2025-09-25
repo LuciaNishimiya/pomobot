@@ -30,11 +30,12 @@ export async function startPomodoro(client: Client, message: OmitPartialGroupDMC
   const sentMessage = await message.channel.send(`⏳ Pomodoro iniciado.
        Trabajo: ${workDuration} minutos, Descanso: ${breakDuration} minutos, Rondas: ${rounds}`);
   timer.start();
+
   let lastStatus = '';
   let lastUpdateSecond = -1;
+  let isUpdating = false;
   timer.subscribe(async (currentTime: { minutes: number; seconds: number, status: string, rounds: number }) => {
     console.log(currentTime);
-    console.log(timer.silent);
 
     const statusFormatted = `${currentTime.status === 'work' ? 'Trabajo' : 'Descanso'}`;
     const timeFormatted = `${currentTime.minutes.toFixed(0).padStart(2, '0')}:${currentTime.seconds.toFixed(0).padStart(2, '0')}`
@@ -66,28 +67,40 @@ export async function startPomodoro(client: Client, message: OmitPartialGroupDMC
     if (currentSecond % 5 !== 0 && lastUpdateSecond !== currentSecond) {
         return;
     }
+    
+    // Prevenir múltiples actualizaciones simultáneas
+    if (isUpdating && currentTime.status !== 'finished') {
+        return;
+    }
+    
+    isUpdating = true;
     lastUpdateSecond = currentSecond;
-    const updatedImage = await createImage(
-      { width: 500, height: 500 },
-      [{ type: 'image', value: `./assets/img/${currentTime.status}.png`, x: 100, y: 50, height: 200, width: 200, z: 2 },
-      {
-        type: 'text',
-        color: '#FFF4E0',
-        value: timeFormatted,
-        x: 19,
-        y: 300,
-        height: 150,
-        z: 60,
-      },
+    
+    try {
+        const updatedImage = await createImage(
+          { width: 500, height: 500 },
+          [{ type: 'image', value: `./assets/img/${currentTime.status}.png`, x: 100, y: 50, height: 200, width: 200, z: 2 },
+          {
+            type: 'text',
+            color: '#FFF4E0',
+            value: timeFormatted,
+            x: 19,
+            y: 300,
+            height: 150,
+            z: 60,
+          }]
+        );
 
-      ]
-    );
-
-    sentMessage.edit({
-      content: `# ⏳ ${timeFormatted} Estado: ${statusFormatted}
-          Rondas: ${rounds}/${currentTime.rounds}`,
-      files: [updatedImage],
-    });
+        await sentMessage.edit({
+          content: `# ⏳ ${timeFormatted} Estado: ${statusFormatted}
+              Rondas: ${rounds}/${currentTime.rounds}`,
+          files: [updatedImage],
+        });
+    } catch (error) {
+        console.error('Error al actualizar el mensaje:', error);
+    } finally {
+        isUpdating = false;
+    }
      if (currentTime.status === 'finished') {
       client.pomodoro.delete(voiceChannelId);
       message.channel.send('✅ Pomodoro completado!');
